@@ -1,0 +1,235 @@
+<!doctype html>
+<!--
+  Motion composition. One file = one animation.
+  Edit the blocks marked EDIT: style tokens (colors, font), FORMAT, COPY/DATA, TIMELINE.
+  Every word, number, timing and color on screen comes from those blocks.
+  Preview: open in a browser (space = play/pause, arrows = step, drag the bar).
+  Export:  python3 scripts/render.py this-file.html -o out.mp4
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Motion</title>
+<style>
+  /* EDIT: style tokens */
+  :root {
+    --bg: #f4f3ef;
+    --ink: #16181d;
+    --muted: #5f6470;
+    --accent: #2f5bea;
+    --accent-2: #12a37a;
+    --card: #ffffff;
+    --font: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  html, body { margin: 0; background: #111; }
+  #stage {
+    position: relative; overflow: hidden;
+    background: var(--bg); color: var(--ink); font-family: var(--font);
+    -webkit-font-smoothing: antialiased; transform-origin: 0 0;
+  }
+  .abs { position: absolute; }
+  .hidden { opacity: 0; }
+
+  /* Composition styles */
+  .kicker { font-size: 34px; font-weight: 600; letter-spacing: .02em; color: var(--accent); text-transform: uppercase; }
+  .title  { font-size: 104px; font-weight: 700; letter-spacing: -.03em; line-height: 1.02; }
+  .sub    { font-size: 40px; font-weight: 500; color: var(--muted); }
+  .big    { font-size: 220px; font-weight: 700; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+  .bar-label { font-size: 30px; font-weight: 600; color: var(--muted); text-align: center; width: 160px; }
+  .bar-value { font-size: 36px; font-weight: 700; text-align: center; width: 160px; font-variant-numeric: tabular-nums; }
+  .bar { border-radius: 18px 18px 6px 6px; background: var(--accent); transform-origin: 50% 100%; }
+
+  /* Preview chrome (hidden during render) */
+  #chrome { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 14px; background: #1b1b1b; color: #ddd;
+            font: 13px/1 ui-monospace, Menlo, monospace; display: flex; gap: 12px; align-items: center; }
+  #chrome input[type=range] { flex: 1; }
+  #chrome button { background: #333; color: #eee; border: 0; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+  body.render #chrome { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <!-- Scene 1: title -->
+  <div id="kicker" class="abs kicker">Q3 2026 results</div>
+  <div id="title"  class="abs title">Revenue grew in<br>every region.</div>
+
+  <!-- Scene 2: hero number -->
+  <div id="hero" class="abs big">$0.0M</div>
+  <div id="heroSub" class="abs sub">total quarterly revenue</div>
+
+  <!-- Scene 3: bar chart (bars injected from DATA) -->
+  <div id="chart" class="abs"></div>
+  <div id="chartTitle" class="abs sub">Revenue by region, $M</div>
+
+  <!-- Scene 4: takeaway -->
+  <div id="takeaway" class="abs title" style="font-size:88px">West led with <span style="color:var(--accent)">+31%</span>.</div>
+</div>
+
+<div id="chrome">
+  <button id="play">play</button>
+  <input id="scrub" type="range" min="0" step="0.001" value="0">
+  <span id="clock">0.00s</span>
+</div>
+
+<script>
+/* ============================== EDIT: FORMAT ============================== */
+const FORMAT = { width: 1920, height: 1080, fps: 30, duration: 16 };   // seconds
+
+/* ============================ EDIT: COPY / DATA =========================== */
+const DATA = {
+  total: 48.6,                                   // $M
+  regions: [
+    { name: "West",    value: 17.2 },
+    { name: "Central", value: 12.9 },
+    { name: "East",    value: 11.4 },
+    { name: "South",   value: 7.1  },
+  ],
+};
+
+/* ======================== runtime ========================= */
+const stage = document.getElementById('stage');
+const $ = id => document.getElementById(id);
+const tracks = [];   // { start, dur, fn, ease }
+
+const ease = {
+  linear: p => p,
+  out:    p => 1 - Math.pow(1 - p, 3),                       // cubic out: default for entrances
+  inOut:  p => p < .5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3)/2,
+  in:     p => p*p*p,                                         // exits
+  back:   p => { const c = 1.70158, d = c + 1; return 1 + d*Math.pow(p-1,3) + c*Math.pow(p-1,2); },
+  spring: p => 1 - Math.exp(-6*p) * Math.cos(10*p),             // settles with one soft overshoot
+};
+const lerp = (a, b, p) => a + (b - a) * p;
+
+/** Core primitive: fn(eased progress) over [start, start+dur]; after the window fn(1).
+ *  Before the window, only the earliest track for a given key applies fn(0), so an element's
+ *  first state holds until its first move and later tracks never leak backwards in time. */
+function track(start, dur, fn, e = ease.out, key = null) { tracks.push({ start, dur, fn, ease: e, key }); }
+
+/** Tween numeric props on an element. props: {x,y,scale,rotate,opacity,blur} as [from,to]. */
+function tween(el, start, dur, props, e = ease.out) {
+  el = typeof el === 'string' ? $(el) : el;
+  if (!el._m) el._m = { x: 0, y: 0, scale: 1, rotate: 0, opacity: 1, blur: 0 };
+  if (!el._uid) el._uid = 'e' + (uid++);
+  for (const k in props) track(start, dur, p => {
+    el._m[k] = lerp(props[k][0], props[k][1], p);
+    const m = el._m;
+    el.style.transform = `translate(${m.x}px,${m.y}px) scale(${m.scale}) rotate(${m.rotate}deg)`;
+    el.style.opacity = m.opacity;
+    el.style.filter = m.blur > 0.01 ? `blur(${m.blur}px)` : '';
+  }, e, el._uid + ':' + k);
+}
+let uid = 0;
+/** Place an element absolutely (stage pixels). */
+function place(el, left, top, extra = {}) {
+  el = typeof el === 'string' ? $(el) : el;
+  Object.assign(el.style, { left: left + 'px', top: top + 'px' }, extra);
+  return el;
+}
+/** Count a number up inside an element. fmt(v) -> string. */
+function countUp(el, start, dur, from, to, fmt, e = ease.out) {
+  el = typeof el === 'string' ? $(el) : el;
+  if (!el._uid) el._uid = 'e' + (uid++);
+  track(start, dur, p => { el.textContent = fmt(lerp(from, to, p)); }, e, el._uid + ':text');
+}
+/** Entrance and exit. */
+const enter = (el, at, d = .7, dy = 40) => tween(el, at, d, { y: [dy, 0], opacity: [0, 1], blur: [8, 0] });
+const exit  = (el, at, d = .45, dy = -30) => tween(el, at, d, { y: [0, dy], opacity: [1, 0] }, ease.in);
+
+let sorted = null;
+function seek(t) {
+  // Tracks earlier in time apply first, so later tracks on the same prop win.
+  const seen = new Set();
+  for (const tr of sorted || (sorted = [...tracks].sort((a, b) => a.start - b.start))) {
+    const first = tr.key == null || !seen.has(tr.key);
+    if (tr.key != null) seen.add(tr.key);
+    if (t < tr.start) { if (first) tr.fn(tr.ease(0)); continue; }
+    const p = tr.dur <= 0 ? 1 : Math.min(1, (t - tr.start) / tr.dur);
+    tr.fn(tr.ease(p));
+  }
+  // CSS animations / WAAPI also become deterministic.
+  for (const a of document.getAnimations()) { a.pause(); a.currentTime = t * 1000; }
+}
+
+/* ============================ EDIT: TIMELINE ============================== */
+/* Layout once, then schedule. Times are seconds. Hold every finished state >= 1.2s. */
+const W = FORMAT.width, H = FORMAT.height;
+const money = v => `$${v.toFixed(1)}M`;
+
+// Scene 1 (0 - 3.4)
+place('kicker', 160, 380);
+place('title', 160, 440);
+enter('kicker', 0.3);
+enter('title', 0.5, .9, 60);
+exit('kicker', 3.0); exit('title', 3.05);
+
+// Scene 2 (3.4 - 7.2)
+place('hero', 160, 300);
+place('heroSub', 172, 560);
+enter('hero', 3.4, .6);
+countUp('hero', 3.5, 1.8, 0, DATA.total, money);
+enter('heroSub', 4.0);
+exit('hero', 6.8); exit('heroSub', 6.85);
+
+// Scene 3 (7.2 - 12.4): bars
+const chart = place('chart', 260, 180, { width: '1400px', height: '760px' });
+const maxV = Math.max(...DATA.regions.map(r => r.value));
+const barH = 560, gap = 340;
+DATA.regions.forEach((r, i) => {
+  const x = i * gap, h = barH * r.value / maxV;
+  const bar = place(document.createElement('div'), x + 30, 620 - h, { width: '100px', height: h + 'px' });
+  bar.className = 'abs bar';
+  if (i === 0) bar.style.background = 'var(--accent-2)';
+  const val = place(document.createElement('div'), x - 0, 620 - h - 56); val.className = 'abs bar-value';
+  const lab = place(document.createElement('div'), x - 0, 640); lab.className = 'abs bar-label'; lab.textContent = r.name;
+  chart.append(bar, val, lab);
+  const t0 = 7.6 + i * .18;
+  tween(bar, t0, .9, { scale: [0, 1] }, ease.spring);
+  enter(lab, t0, .5, 20);
+  enter(val, t0 + .5, .5, 16);
+  countUp(val, t0 + .5, .7, 0, r.value, v => v.toFixed(1));
+});
+place('chartTitle', 160, 80);
+enter('chartTitle', 7.3);
+exit('chart', 12.0); exit('chartTitle', 12.0);
+
+// Scene 4 (12.4 - 16)
+place('takeaway', 160, 470);
+enter('takeaway', 12.5, .9, 50);
+
+/* ========================================================================== */
+
+/* ------------------------- preview + render hooks ------------------------- */
+Object.assign(stage.style, { width: W + 'px', height: H + 'px' });
+const isRender = new URLSearchParams(location.search).has('render');
+if (isRender) document.body.classList.add('render');
+
+window.__motion = { ...FORMAT, seek, ready: document.fonts.ready.then(() => true) };
+
+if (!isRender) {
+  const fit = () => { const s = Math.min(innerWidth / W, (innerHeight - 44) / H); stage.style.transform = `scale(${s})`; };
+  addEventListener('resize', fit); fit();
+  const scrub = $('scrub'), clock = $('clock'), btn = $('play');
+  scrub.max = FORMAT.duration;
+  let t = 0, playing = false, last = 0;
+  const show = () => { seek(t); scrub.value = t; clock.textContent = t.toFixed(2) + 's / ' + FORMAT.duration + 's'; };
+  const loop = now => { if (!playing) return; t += (now - last) / 1000; last = now;
+    if (t >= FORMAT.duration) { t = FORMAT.duration; playing = false; btn.textContent = 'play'; }
+    show(); requestAnimationFrame(loop); };
+  const toggle = () => { playing = !playing; btn.textContent = playing ? 'pause' : 'play';
+    if (playing) { if (t >= FORMAT.duration) t = 0; last = performance.now(); requestAnimationFrame(loop); } };
+  btn.onclick = toggle;
+  scrub.oninput = () => { t = +scrub.value; playing = false; btn.textContent = 'play'; show(); };
+  addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    if (e.code === 'ArrowRight') { t = Math.min(FORMAT.duration, t + 1 / FORMAT.fps); show(); }
+    if (e.code === 'ArrowLeft')  { t = Math.max(0, t - 1 / FORMAT.fps); show(); }
+  });
+  show();
+} else {
+  seek(0);
+}
+</script>
+</body>
+</html>
