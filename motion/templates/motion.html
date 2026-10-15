@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
   Motion composition. One file = one animation.
-  Edit the blocks marked EDIT: style tokens (colors, font), FORMAT, COPY/DATA, TIMELINE.
+  Edit the blocks marked EDIT: style tokens (colors, fonts, radius), FORMAT, COPY/DATA, TIMELINE.
   Every word, number, timing and color on screen comes from those blocks.
   Preview: open in a browser (space = play/pause, arrows = step, drag the bar).
   Export:  python3 scripts/render.py this-file.html -o out.mp4
@@ -20,6 +20,8 @@
     --accent-2: #12a37a;
     --card: #ffffff;
     --font: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-display: var(--font);
+    --radius: 18px;
   }
 
   html, body { margin: 0; background: #111; }
@@ -32,13 +34,14 @@
   .hidden { opacity: 0; }
 
   /* Composition styles */
+  .title, .big, .kicker { font-family: var(--font-display); }
   .kicker { font-size: 34px; font-weight: 600; letter-spacing: .02em; color: var(--accent); text-transform: uppercase; }
   .title  { font-size: 104px; font-weight: 700; letter-spacing: -.03em; line-height: 1.02; }
   .sub    { font-size: 40px; font-weight: 500; color: var(--muted); }
   .big    { font-size: 220px; font-weight: 700; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
   .bar-label { font-size: 30px; font-weight: 600; color: var(--muted); text-align: center; width: 160px; }
   .bar-value { font-size: 36px; font-weight: 700; text-align: center; width: 160px; font-variant-numeric: tabular-nums; }
-  .bar { border-radius: 18px 18px 6px 6px; background: var(--accent); transform-origin: 50% 100%; }
+  .bar { border-radius: var(--radius) var(--radius) 6px 6px; background: var(--accent); transform-origin: 50% 100%; }
 
   /* Preview chrome (hidden during render) */
   #chrome { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 14px; background: #1b1b1b; color: #ddd;

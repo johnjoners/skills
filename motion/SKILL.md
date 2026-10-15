@@ -21,7 +21,7 @@ scripts/render.py       frame-exact renderer (MP4, ProRes, ProRes 4444 alpha, GI
 
 1. Gather the source material and fix the format: 1920x1080 (16:9) by default, 1080x1920
    for vertical social, 1080x1080 square. Aim for 15 to 45 seconds, about 4 seconds per beat.
-   Apply the user's brand colors and font if they have them.
+   Apply the user's brand colors and fonts, from the project's `DESIGN.md` when there is one.
 2. Write a beat sheet before any code: one line per scene with its time range, the one thing
    on screen, and how it leaves. Numbers come from the source verbatim, never rounded or
    invented.
@@ -39,6 +39,34 @@ scripts/render.py       frame-exact renderer (MP4, ProRes, ProRes 4444 alpha, GI
    ```
 6. Hand back the video and the HTML. Opening the HTML in a browser gives a scrubbable
    preview (space plays, arrow keys step a frame, the slider seeks).
+
+## DESIGN.md
+
+Style tokens come from a `DESIGN.md` beside the composition, else at the project root. With
+neither, offer styles from the [TypeUI](https://github.com/bergside/typeui) registry and
+save the pick beside the composition. No pick keeps the template defaults.
+
+```
+r=https://raw.githubusercontent.com/bergside/awesome-design-skills/main/skills
+curl -s $r/index.json                      # slugs and names
+curl -s $r/<slug>/DESIGN.md -o DESIGN.md
+```
+
+Previews: `https://www.typeui.sh/design-skills/<slug>`.
+
+| DESIGN.md | `:root` |
+|---|---|
+| `colors.surface` (or `neutral`) | `--bg` |
+| `colors.text` | `--ink`; `--muted` is `color-mix(in srgb, var(--ink) 60%, var(--bg))` |
+| `colors.primary` | `--accent`; `secondary` if primary is near `--ink` |
+| `colors.secondary` | `--accent-2`; `success` if secondary took `--accent` |
+| `typography.body-md.fontFamily` | `--font`, prepended to the system stack |
+| `typography.h1.fontFamily` | `--font-display` |
+| `rounded.md` or `rounded.lg` | `--radius` |
+
+Skip its font sizes and spacing; at 1080p, body text is 36px or more and headlines 88 to
+120px. Match easing to the tone its prose describes. Load its web fonts with `<link>` or
+`@font-face`.
 
 ## Timeline API
 
