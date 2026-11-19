@@ -7,6 +7,7 @@ agent that reads `SKILL.md` folders can load them.
 | Skill | Does |
 | --- | --- |
 | [motion](motion/) | Animated explainers and charts built as editable HTML, rendered to MP4, ProRes or GIF |
+| [skill-sanitizer](skill-sanitizer/) | Prepares a private skill for public use by generalizing local assumptions and delivering a separate cleaned copy |
 
 ## Install
 
