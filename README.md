@@ -6,6 +6,7 @@ agent that reads `SKILL.md` folders can load them.
 
 | Skill | Does |
 | --- | --- |
+| [agent-evals](skills/agent-evals/) | Grade an agent on results and quality: golden sets, a judge calibrated to the owner's verdicts, before/after scores in a write-protected harness |
 | [browser-session-takeover](skills/browser-session-takeover/) | Drive the user's already-signed-in browser instead of a fresh profile that hits login walls |
 | [cloud-vm-cost-research](skills/cloud-vm-cost-research/) | Compare cloud VM costs, nonprofit credits and data-protection terms from primary sources |
 | [motion](skills/motion/) | Animated explainers and charts built as editable HTML, rendered to MP4, ProRes or GIF |
