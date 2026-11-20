@@ -15,23 +15,17 @@ Copy or symlink a skill folder into the directory your agent loads skills from:
 
 ```sh
 git clone https://github.com/johnjoners/skills
-ln -s "$PWD/skills/motion" <agent-skills-dir>/motion
+ln -s "$PWD/skills/<skill>" <agent-skills-dir>/<skill>
 ```
 
 Agents without skill loading can be pointed at a `SKILL.md` directly.
 
 ## Requirements
 
-`motion` renders through headless Chromium and ffmpeg:
-
-```sh
-python3 -m pip install -r requirements.txt
-python3 -m playwright install chromium
-```
-
-ffmpeg comes from the system package manager (`brew install ffmpeg`, `apt install ffmpeg`).
+Each skill lists its own setup in its `SKILL.md`, with any Python packages in a
+`requirements.txt` beside it.
 
 ## License
 
-[MIT](LICENSE). Skills call ffmpeg and Chromium as external programs and bundle neither;
-their own licenses apply to those installs.
+[MIT](LICENSE). Skills call outside programs without bundling them; those programs keep
+their own licenses.
