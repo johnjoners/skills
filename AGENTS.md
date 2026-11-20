@@ -1,11 +1,13 @@
 # AGENTS.md
 
-Each top-level folder is one skill in the Agent Skills format. `README.md` lists them.
+Each folder under `skills/` is one skill in the Agent Skills format. `README.md` lists
+them. `mcp/` holds a read-only MCP server over the catalogue; it is the only runtime
+code in the repo.
 
 ## Skill layout
 
 ```
-<name>/
+skills/<name>/
   SKILL.md       frontmatter: name, description, license, compatibility
   scripts/       executables the skill runs
   templates/     files the skill copies and edits
@@ -33,3 +35,14 @@ Each top-level folder is one skill in the Agent Skills format. `README.md` lists
   renders, probes and one-off check scripts stay out of the repo.
 - CI comes in when the repo has enough skills to need it, as one workflow that runs every
   skill's example.
+
+## MCP server
+
+- One package, `skills_mcp`, one module, `server.py`. Read-only; every tool keeps the
+  read-only, non-destructive, idempotent, closed-world annotations.
+- Two backends behind one interface: `GitHubBackend` (HTTP fetch, content-hash cache)
+  and `CheckoutBackend` (local path, confined opens). Reads stay under `skills/`.
+- Hidden paths, traversal, symlinks and hard-linked files are refused at open time.
+- Dependencies are project-managed with `uv` and pinned in `mcp/uv.lock`. Nothing
+  installs globally.
+- Scratch clients, probes and renders stay outside the repo.

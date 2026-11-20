@@ -5,3 +5,6 @@ __pycache__/
 *.mov
 *.gif
 stills/
+mcp/.venv/
+mcp/*.egg-info/
+mcp/dist/
