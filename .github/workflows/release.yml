@@ -42,7 +42,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          project=$(sed -n 's/^name = "\(.*\)"$/\1/p' mcp/pyproject.toml)
           version=$(sed -n 's/^version = "\(.*\)"$/\1/p' mcp/pyproject.toml)
           gh release create "$GITHUB_REF_NAME" dist/*.whl dist/*.tar.gz \
-            --verify-tag --title "$project $version" --generate-notes
+            --verify-tag --title "skills-mcp $version" --generate-notes
