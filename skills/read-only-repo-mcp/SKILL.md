@@ -81,15 +81,24 @@ Build in vertical slices: one failing behavior, the smallest fix, a passing suit
 
 ## Release
 
-A server consumers install from a git URL needs a fixed ref, not a floating branch.
+Publish to PyPI. A git tag is a mutable pointer; a PyPI version is an immutable artifact
+that installs in seconds with no build step, no git on the consumer's machine, and no
+credentials for private repos. Pin the package name early: short generic names on PyPI
+are taken by strangers, and a name that does not say whose server it is invites squatting.
 
-1. Tag the verified commit with an annotated tag named for the server and its version
-   (`mcp-v0.1.0` style when the server shares a repo with other content). Push the tag.
-2. Cut a GitHub release on the tag with the one-line install command pointing at the tag:
-   `uvx --from "git+https://<host>/<owner>/<repo>@<tag>[#subdirectory=<dir>]" <server>`.
-3. Run the release's own install command from scratch and call one tool through a real
-   client. A release that does not install is not a release.
-4. Update the install snippet in the README to the tag in the same change.
+1. Add a tag-triggered release workflow (see `references/release.yml`): check the tag
+   matches `pyproject.toml` version, build the wheel, smoke-test it from a clean
+   directory with `uvx --no-cache --from <wheel> <server> --help`, publish with
+   `uv publish` using a `PYPI_API_TOKEN` repo secret, then cut the GitHub release with
+   the built artifacts attached.
+2. Tag the verified commit (`mcp-v0.1.0` style when the server shares a repo with other
+   content, `v0.1.0` when the repo is the server). Push the tag; the workflow does
+   the rest.
+3. Verify the release from scratch: `uvx --no-cache <package>==<version> --help`, then
+   call one tool through a real client. A release that does not install is not a
+   release.
+4. Update the install snippet in the README to the pinned PyPI command in the same
+   change: `uvx <package>==<version>`.
 
 ## Delivery
 
@@ -100,3 +109,4 @@ A server consumers install from a git URL needs a fixed ref, not a floating bran
 ## References
 
 - `references/guards.py`: confinement, YAML, and UTF-8 guards with a self-test. Last run: 120 UTF-8 pages rebuilt the source exactly, the denied paths were rejected, and three YAML inputs were rejected before parsing.
+- `references/release.yml`: tag-triggered PyPI release workflow. Check tag vs version, build, smoke-test the wheel from a clean directory, publish, cut the GitHub release.

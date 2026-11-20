@@ -1,0 +1,48 @@
+# Tag-triggered release workflow: check tag vs version, build, smoke-test the
+# wheel from a clean directory, publish to PyPI, cut the GitHub release.
+# Needs a PYPI_API_TOKEN repo secret. Adapt the tag pattern, the working
+# directory of the package, and the smoke-test command.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.ref }}
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+      - name: Check the tag matches the package version
+        run: |
+          project=$(sed -n 's/^version = "\(.*\)"$/\1/p' pyproject.toml)
+          if [ "v$project" != "$GITHUB_REF_NAME" ]; then
+            echo "tag $GITHUB_REF_NAME, pyproject $project"
+            exit 1
+          fi
+      - name: Build the distribution
+        run: uv build --out-dir dist
+      - name: Smoke-test the wheel without a checkout
+        working-directory: ${{ runner.temp }}
+        run: |
+          wheel=$(ls "$GITHUB_WORKSPACE"/dist/*.whl)
+          uvx --no-cache --from "$wheel" <server-command> --help
+      - name: Publish to PyPI
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: uv publish dist/*
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.whl dist/*.tar.gz --verify-tag --generate-notes
