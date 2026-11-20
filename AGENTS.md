@@ -10,6 +10,7 @@ Each top-level folder is one skill in the Agent Skills format. `README.md` lists
   scripts/       executables the skill runs
   templates/     files the skill copies and edits
   references/    long material loaded only when needed
+  requirements.txt Python packages the scripts need, if any
 ```
 
 - `name` matches the folder: lowercase, hyphens, 64 characters max.
@@ -17,6 +18,8 @@ Each top-level folder is one skill in the Agent Skills format. `README.md` lists
   choose skills from this line alone.
 - Keep `SKILL.md` under 500 lines; move detail into `references/`.
 - Paths inside a skill are relative to the skill folder.
+- Dependencies live with the skill that needs them, never at the repo root. System programs
+  (ffmpeg, a browser) go in `compatibility`.
 
 ## Rules
 

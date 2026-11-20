@@ -17,6 +17,15 @@ templates/motion.html   runtime plus a 16s worked example
 scripts/render.py       frame-exact renderer (MP4, ProRes, ProRes 4444 alpha, GIF, PNG stills)
 ```
 
+## Setup
+
+```sh
+python3 -m pip install -r requirements.txt
+python3 -m playwright install chromium
+```
+
+Run from this folder. ffmpeg comes from the system package manager.
+
 ## Workflow
 
 1. Gather the source material and fix the format: 1920x1080 (16:9) by default, 1080x1920
