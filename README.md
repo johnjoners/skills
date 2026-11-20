@@ -34,7 +34,7 @@ An agent can also read this catalogue over MCP without cloning it. `mcp/` holds 
 read-only server that lists, reads and searches the skills over HTTP:
 
 ```sh
-uvx --from "git+https://github.com/johnjoners/skills#subdirectory=mcp" skills-mcp
+uvx --from "git+https://github.com/johnjoners/skills@mcp-v0.1.0#subdirectory=mcp" skills-mcp
 ```
 
 Client config:
@@ -44,7 +44,7 @@ Client config:
   "mcpServers": {
     "skills": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/johnjoners/skills#subdirectory=mcp", "skills-mcp"]
+      "args": ["--from", "git+https://github.com/johnjoners/skills@mcp-v0.1.0#subdirectory=mcp", "skills-mcp"]
     }
   }
 }

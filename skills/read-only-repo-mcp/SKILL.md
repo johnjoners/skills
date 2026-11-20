@@ -79,6 +79,18 @@ Run these in order. Each must pass before the next.
 
 Build in vertical slices: one failing behavior, the smallest fix, a passing suite, then the next behavior.
 
+## Release
+
+A server consumers install from a git URL needs a fixed ref, not a floating branch.
+
+1. Tag the verified commit with an annotated tag named for the server and its version
+   (`mcp-v0.1.0` style when the server shares a repo with other content). Push the tag.
+2. Cut a GitHub release on the tag with the one-line install command pointing at the tag:
+   `uvx --from "git+https://<host>/<owner>/<repo>@<tag>[#subdirectory=<dir>]" <server>`.
+3. Run the release's own install command from scratch and call one tool through a real
+   client. A release that does not install is not a release.
+4. Update the install snippet in the README to the tag in the same change.
+
 ## Delivery
 
 - Keep smoke-test scripts outside the repo.
