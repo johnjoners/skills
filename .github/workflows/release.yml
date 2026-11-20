@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'mcp-v*'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.ref }}
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+      - name: Check the tag matches the package version
+        run: |
+          project=$(sed -n 's/^version = "\(.*\)"$/\1/p' mcp/pyproject.toml)
+          if [ "mcp-v$project" != "$GITHUB_REF_NAME" ]; then
+            echo "tag $GITHUB_REF_NAME, pyproject $project"
+            exit 1
+          fi
+      - name: Build the distribution
+        run: uv build --out-dir dist mcp
+      - name: Smoke-test the wheel without a checkout
+        working-directory: ${{ runner.temp }}
+        run: |
+          wheel=$(ls "$GITHUB_WORKSPACE"/dist/*.whl)
+          out=$(uvx --no-cache --from "$wheel" johnjoners-skills --help)
+          echo "$out" | grep -q "skills-mcp"
+      - name: Publish to PyPI
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: uv publish dist/*
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.whl dist/*.tar.gz --verify-tag --generate-notes

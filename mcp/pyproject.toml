@@ -1,6 +1,6 @@
 [project]
-name = "skills-mcp"
-version = "0.1.0"
+name = "johnjoners-skills"
+version = "0.1.1"
 description = "Read-only MCP server over the johnjoners/skills catalogue; consumers never clone the skills repo"
 requires-python = ">=3.11"
 dependencies = [
@@ -9,7 +9,7 @@ dependencies = [
 ]
 
 [project.scripts]
-skills-mcp = "skills_mcp.server:main"
+johnjoners-skills = "skills_mcp.server:main"
 
 [build-system]
 requires = ["hatchling"]
